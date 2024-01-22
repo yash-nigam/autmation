@@ -1,0 +1,119 @@
+------------ sehll using EOF
+Bash
+container_name="my-app"
+image_name="my-app:v1"
+
+cat << EOF > config.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: $container_name
+spec:
+  containers:
+  - name: $container_name
+    image: $image_name
+EOF
+
+-----------bard
+
+There are some files present such as dashboard1.json and dashboard2.json and so on
+each of these files contains json data
+
+write a shell script which reads all these json files and creates a configmap.yaml as below
+where the data part of config map contains file names as data key and file content as actual data
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+ name: dashboard-demo
+data:
+ # file-like keys
+ dashboard1.json: |
+  {single line json}  
+ dashboard2.json: |
+  {single line json}
+Here's the shell script that creates the ConfigMap YAML as you described:
+
+Bash
+#!/bin/bash
+
+# Header for the ConfigMap YAML
+cat << EOF > configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-demo
+data:
+EOF
+
+# Iterate through all JSON files in the current directory
+for file in *.json; do
+  # Read the file content and ensure single-line format
+  content=$(cat "$file" | tr -d '\n')
+
+  # Append the file content to the ConfigMap YAML with correct indentation
+  printf "  %s: |\n    %s\n" "$file" "$content" >> configmap.yaml
+done
+Use code with caution. Learn more
+Explanation:
+
+Header: Creates the YAML header using a heredoc.
+Iteration: Loops through all .json files in the directory.
+Reading Content: Reads each file's content using cat and removes newlines with tr -d '\n' for single-line JSON.
+Appending to YAML: Appends the filename as the key and content as the value using printf with proper indentation.
+Output: The final configmap.yaml will contain all JSON files' data as key-value pairs.
+To use the script:
+
+Save it as a .sh file (e.g., create_configmap.sh).
+Make it executable: chmod +x create_configmap.sh
+Run it: ./create_configmap.sh
+This will create the configmap.yaml file in the same directory.
+Apply the ConfigMap: kubectl apply -f configmap.yaml
+
+
+
+
+
+
+-------------- chatgpt
+
+Certainly! You can create a shell script to achieve this. Here's an example shell script that reads all the JSON files and generates the desired configmap.yaml:
+
+bash
+Copy code
+#!/bin/bash
+
+# ConfigMap metadata
+CONFIG_MAP_NAME="dashboard-demo"
+CONFIG_MAP_YAML="configmap.yaml"
+
+# Start the YAML file
+echo "apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: $CONFIG_MAP_NAME
+data:" > $CONFIG_MAP_YAML
+
+# Loop through each JSON file
+for json_file in dashboard*.json; do
+  # Extract data from JSON file
+  file_content=$(cat "$json_file" | sed 's/"/\\"/g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g')
+  # Add entry to the YAML file
+  echo " $json_file: |" >> $CONFIG_MAP_YAML
+  echo "  $file_content" >> $CONFIG_MAP_YAML
+done
+
+echo "ConfigMap YAML file '$CONFIG_MAP_YAML' generated successfully."
+Save this script to a file, e.g., generate_configmap.sh, and make it executable:
+
+bash
+Copy code
+chmod +x generate_configmap.sh
+Then, run the script:
+
+bash
+Copy code
+./generate_configmap.sh
+This script assumes that your JSON files are named dashboard1.json, dashboard2.json, and so on. Adjust the script accordingly if your naming convention is different.
+
+Please note that this script assumes that each JSON file contains a single-line JSON. If your JSON files have multiple lines, the script might need further adjustments based on your specific JSON structure.
